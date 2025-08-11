@@ -1,0 +1,475 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+import math
+from PIL import Image, ImageTk, ImageDraw
+import os
+
+class PlacaBaseApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Diseño de Placa Base - Ing. Alex Ivan Cordova M.s.C")
+        self.root.configure(bg='#2c3e50')  # Color de fondo general
+        self.root.minsize(1000, 600)  # Minimum window size
+        self.root.resizable(True, True)  # Allow resizing
+
+        # Configurar estilos
+        self.configure_styles()
+        
+        # Crear el contenedor principal con scrollbar
+        self.create_scrollable_container()
+        
+        # Cargar imágenes
+        self.load_images()
+        
+        # Crear widgets
+        self.create_widgets()
+
+    def configure_styles(self):
+        """Configura los estilos visuales de la aplicación"""
+        self.style = ttk.Style()
+        
+        # Estilo para el marco principal
+        self.style.configure('Main.TFrame', background='#ecf0f1', 
+                           relief='ridge', borderwidth=5)
+        
+        # Estilo para los títulos
+        self.style.configure('Title.TLabel', font=('Helvetica', 14, 'bold'),
+                           foreground='#2c3e50', background='#ecf0f1')
+        
+        # Estilo para los subtítulos
+        self.style.configure('Subtitle.TLabel', font=('Helvetica', 10),
+                           foreground='#7f8c8d', background='#ecf0f1')
+        
+        # Estilo para los botones
+        self.style.configure('Accent.TButton', font=('Helvetica', 10, 'bold'),
+                           foreground='white', background='#3498db',
+                           padding=10)
+        self.style.map('Accent.TButton',
+                     background=[('active', '#2980b9')])
+        
+        # Estilo para los frames de grupo
+        self.style.configure('Group.TLabelframe', font=('Helvetica', 10, 'bold'),
+                           foreground='#2c3e50', background='#ecf0f1')
+        self.style.configure('Group.TLabelframe.Label', foreground='#2c3e50',
+                           background='#ecf0f1')
+
+    def create_scrollable_container(self):
+        """Crea un contenedor principal con scrollbar"""
+        # Crear un canvas principal
+        self.canvas = tk.Canvas(self.root, bg='#2c3e50', highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self.root, orient="vertical", command=self.canvas.yview)
+        self.main_frame = ttk.Frame(self.canvas, style='Main.TFrame', padding=(20, 15))
+        
+        # Configurar el canvas
+        self.main_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        
+        # Empaquetar canvas y scrollbar
+        self.canvas.pack(side="left", fill="both", expand=True, padx=20, pady=20)
+        self.scrollbar.pack(side="right", fill="y")
+        
+        # Habilitar desplazamiento con la rueda del ratón
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+
+    def _on_mousewheel(self, event):
+        """Habilita el desplazamiento con la rueda del ratón"""
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def add_decorative_border(self):
+        """Añade un borde decorativo alrededor del marco principal"""
+        border_color = '#3498db'
+        
+        # Crear un canvas para el borde decorativo
+        border_canvas = tk.Canvas(self.main_frame, highlightthickness=0,
+                                 bg='#ecf0f1', height=10)
+        border_canvas.pack(fill=tk.X, side=tk.TOP)
+        
+        # Dibujar patrón decorativo en el borde
+        for i in range(0, 200, 15):
+            border_canvas.create_rectangle(i, 0, i+10, 10, fill=border_color,
+                                         outline=border_color)
+        
+        # Repetir para el borde inferior
+        bottom_border = tk.Canvas(self.main_frame, highlightthickness=0,
+                                bg='#ecf0f1', height=10)
+        bottom_border.pack(fill=tk.X, side=tk.BOTTOM)
+        for i in range(0, 200, 15):
+            bottom_border.create_rectangle(i, 0, i+10, 10, fill=border_color,
+                                        outline=border_color)
+
+    def load_images(self):
+        """Carga las imágenes para mostrar en la interfaz"""
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            
+            # Imagen 1: Diagrama de placa base
+            img1_path = os.path.join(script_dir, "placabase1.png")
+            self.image1 = Image.open(img1_path)
+            self.image1 = self.image1.resize((380, 280), Image.LANCZOS)
+            self.photo1 = ImageTk.PhotoImage(self.image1)
+            
+            # Imagen 2: Esquema de conexión
+            img2_path = os.path.join(script_dir, "DETALLEPLACABASE.JPG")
+            self.image2 = Image.open(img2_path)
+            self.image2 = self.image2.resize((380, 280), Image.LANCZOS)
+            self.photo2 = ImageTk.PhotoImage(self.image2)
+            
+        except Exception as e:
+            # Crear imágenes de reemplazo si hay error
+            self.create_placeholder_images()
+            messagebox.showwarning("Advertencia", 
+                                 f"No se pudieron cargar las imágenes:\n{str(e)}")
+
+    def create_placeholder_images(self):
+        """Crea imágenes de reemplazo cuando no se encuentran las originales"""
+        # Imagen 1 de reemplazo
+        placeholder1 = Image.new('RGB', (380, 280), color='#f8f9fa')
+        draw = ImageDraw.Draw(placeholder1)
+        draw.text((50, 120), "Diagrama no disponible\n(placabase1.png)", 
+                 fill='#7f8c8d', font=ImageDraw.getfont())
+        self.photo1 = ImageTk.PhotoImage(placeholder1)
+        
+        # Imagen 2 de reemplazo
+        placeholder2 = Image.new('RGB', (380, 280), color='#f8f9fa')
+        draw = ImageDraw.Draw(placeholder2)
+        draw.text((50, 120), "Esquema no disponible\n(placabase2.png)", 
+                 fill='#7f8c8d', font=ImageDraw.getfont())
+        self.photo2 = ImageTk.PhotoImage(placeholder2)
+
+    def create_widgets(self):
+        """Crea todos los widgets de la interfaz"""
+        # Añadir borde decorativo
+        self.add_decorative_border()
+        
+        # Título principal
+        title_frame = ttk.Frame(self.main_frame)
+        title_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        ttk.Label(title_frame, text="CONEXIÓN DE PLACA BASE", 
+                 style='Title.TLabel').pack(side=tk.LEFT)
+        
+        ttk.Label(title_frame, text="Por: Ing. Alex Ivan Cordova M.s.C - Fecha: 10/10/2024",
+                 style='Subtitle.TLabel').pack(side=tk.RIGHT)
+        
+        # Notebook para organizar las pestañas
+        notebook = ttk.Notebook(self.main_frame)
+        notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # Pestaña 1: Datos de entrada (con imágenes)
+        self.create_input_tab(notebook)
+        
+        # Pestaña 2: Resultados
+        self.create_results_tab(notebook)
+
+    def create_input_tab(self, notebook):
+        """Crea la pestaña de entrada de datos con imágenes"""
+        input_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(input_frame, text="Datos de Entrada")
+        
+        # Contenedor principal para datos + imágenes
+        main_content = ttk.Frame(input_frame)
+        main_content.pack(fill=tk.BOTH, expand=True)
+        
+        # Frame para los datos de entrada
+        data_container = ttk.Frame(main_content)
+        data_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Contenido de los datos de entrada (2 columnas)
+        self.create_input_columns(data_container)
+        
+        # Frame para las imágenes (derecha)
+        self.create_images_panel(main_content)
+
+    def create_input_columns(self, parent_frame):
+        """Crea las columnas de entrada de datos"""
+        # COLUMNA IZQUIERDA
+        left_col = ttk.Frame(parent_frame)
+        left_col.grid(row=0, column=0, padx=10, sticky="nsew")
+        
+        # Dimensiones de la columna
+        col_frame = ttk.LabelFrame(left_col, text="Dimensiones de la Columna (mm)", 
+                                 style='Group.TLabelframe', padding=10)
+        col_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(col_frame, text="dc (altura):").grid(row=0, column=0, sticky="e", pady=2)
+        self.dc = ttk.Entry(col_frame)
+        self.dc.grid(row=0, column=1, pady=2)
+        self.dc.insert(0, "500")
+        
+        ttk.Label(col_frame, text="bcf (ancho):").grid(row=1, column=0, sticky="e", pady=2)
+        self.bcf = ttk.Entry(col_frame)
+        self.bcf.grid(row=1, column=1, pady=2)
+        self.bcf.insert(0, "500")
+        
+        ttk.Label(col_frame, text="twc (espesor alma):").grid(row=2, column=0, sticky="e", pady=2)
+        self.twc = ttk.Entry(col_frame)
+        self.twc.grid(row=2, column=1, pady=2)
+        self.twc.insert(0, "25")
+        
+        ttk.Label(col_frame, text="tcf (espesor ala):").grid(row=3, column=0, sticky="e", pady=2)
+        self.tcf = ttk.Entry(col_frame)
+        self.tcf.grid(row=3, column=1, pady=2)
+        self.tcf.insert(0, "25")
+        
+        # Solicitudes aplicadas
+        load_frame = ttk.LabelFrame(left_col, text="Solicitudes Aplicadas", 
+                                   style='Group.TLabelframe', padding=10)
+        load_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(load_frame, text="P (Carga axial, ton):").grid(row=0, column=0, sticky="e", pady=2)
+        self.P = ttk.Entry(load_frame)
+        self.P.grid(row=0, column=1, pady=2)
+        self.P.insert(0, "80")
+        
+        ttk.Label(load_frame, text="Fx (Carga horiz. X, ton):").grid(row=1, column=0, sticky="e", pady=2)
+        self.Fx = ttk.Entry(load_frame)
+        self.Fx.grid(row=1, column=1, pady=2)
+        self.Fx.insert(0, "6.64")
+        
+        ttk.Label(load_frame, text="Fy (Carga horiz. Y, ton):").grid(row=2, column=0, sticky="e", pady=2)
+        self.Fy = ttk.Entry(load_frame)
+        self.Fy.grid(row=2, column=1, pady=2)
+        self.Fy.insert(0, "1.45")
+        
+        ttk.Label(load_frame, text="Mx (Momento X, ton-m):").grid(row=3, column=0, sticky="e", pady=2)
+        self.Mx = ttk.Entry(load_frame)
+        self.Mx.grid(row=3, column=1, pady=2)
+        self.Mx.insert(0, "25")
+        
+        ttk.Label(load_frame, text="Mz (Momento Z, ton-m):").grid(row=4, column=0, sticky="e", pady=2)
+        self.Mz = ttk.Entry(load_frame)
+        self.Mz.grid(row=4, column=1, pady=2)
+        self.Mz.insert(0, "15")
+        
+        # COLUMNA DERECHA
+        right_col = ttk.Frame(parent_frame)
+        right_col.grid(row=0, column=1, padx=10, sticky="nsew")
+        
+        # Propiedades de materiales
+        mat_frame = ttk.LabelFrame(right_col, text="Propiedades de Materiales (kgf/cm²)", 
+                                 style='Group.TLabelframe', padding=10)
+        mat_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(mat_frame, text="Fy (Acero):").grid(row=0, column=0, sticky="e", pady=2)
+        self.Fy_mat = ttk.Entry(mat_frame)
+        self.Fy_mat.grid(row=0, column=1, pady=2)
+        self.Fy_mat.insert(0, "3500")
+        
+        ttk.Label(mat_frame, text="fc (Concreto):").grid(row=1, column=0, sticky="e", pady=2)
+        self.fc = ttk.Entry(mat_frame)
+        self.fc.grid(row=1, column=1, pady=2)
+        self.fc.insert(0, "350")
+        
+        ttk.Label(mat_frame, text="Fyp (Placa base):").grid(row=2, column=0, sticky="e", pady=2)
+        self.Fyp = ttk.Entry(mat_frame)
+        self.Fyp.grid(row=2, column=1, pady=2)
+        self.Fyp.insert(0, "3500")
+        
+        ttk.Label(mat_frame, text="Fup (Placa base):").grid(row=3, column=0, sticky="e", pady=2)
+        self.Fup = ttk.Entry(mat_frame)
+        self.Fup.grid(row=3, column=1, pady=2)
+        self.Fup.insert(0, "4080")
+        
+        # Dimensiones de placa y dado
+        dim_frame = ttk.LabelFrame(right_col, text="Dimensiones de Placa y Dado", 
+                                 style='Group.TLabelframe', padding=10)
+        dim_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(dim_frame, text="Bp (ancho placa, mm):").grid(row=0, column=0, sticky="e", pady=2)
+        self.Bp = ttk.Entry(dim_frame)
+        self.Bp.grid(row=0, column=1, pady=2)
+        self.Bp.insert(0, "700")
+        
+        ttk.Label(dim_frame, text="Hp (altura placa, mm):").grid(row=1, column=0, sticky="e", pady=2)
+        self.Hp = ttk.Entry(dim_frame)
+        self.Hp.grid(row=1, column=1, pady=2)
+        self.Hp.insert(0, "700")
+        
+        ttk.Label(dim_frame, text="cz (ancho dado, cm):").grid(row=2, column=0, sticky="e", pady=2)
+        self.cz = ttk.Entry(dim_frame)
+        self.cz.grid(row=2, column=1, pady=2)
+        self.cz.insert(0, "80")
+        
+        ttk.Label(dim_frame, text="cy (altura dado, cm):").grid(row=3, column=0, sticky="e", pady=2)
+        self.cy = ttk.Entry(dim_frame)
+        self.cy.grid(row=3, column=1, pady=2)
+        self.cy.insert(0, "80")
+        
+        # Parámetros de cálculo
+        calc_frame = ttk.LabelFrame(right_col, text="Parámetros de Cálculo", 
+                                  style='Group.TLabelframe', padding=10)
+        calc_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(calc_frame, text="m (saliente Y, cm):").grid(row=0, column=0, sticky="e", pady=2)
+        self.m = ttk.Entry(calc_frame)
+        self.m.grid(row=0, column=1, pady=2)
+        self.m.insert(0, "14.035")
+        
+        ttk.Label(calc_frame, text="n (saliente Z, cm):").grid(row=1, column=0, sticky="e", pady=2)
+        self.n = ttk.Entry(calc_frame)
+        self.n.grid(row=1, column=1, pady=2)
+        self.n.insert(0, "7")
+
+    def create_images_panel(self, parent_frame):
+        """Crea el panel de imágenes a la derecha"""
+        images_frame = ttk.Frame(parent_frame, width=400)
+        images_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(20, 0))
+        
+        # Frame decorativo para imágenes
+        img_container = ttk.LabelFrame(images_frame, text="Diagramas Ilustrativos",
+                                     style='Group.TLabelframe', padding=15)
+        img_container.pack(fill=tk.BOTH, expand=True)
+        
+        # Imagen 1
+        img1_label = ttk.Label(img_container, text="Diagrama de Placa Base", 
+                             font=('Helvetica', 10, 'bold'))
+        img1_label.pack(pady=(0, 10))
+        
+        img1_frame = ttk.Frame(img_container, relief='sunken', borderwidth=2)
+        img1_frame.pack()
+        ttk.Label(img1_frame, image=self.photo1).pack(padx=5, pady=5)
+        
+        # Separador
+        ttk.Separator(img_container, orient='horizontal').pack(fill='x', pady=15)
+        
+        # Imagen 2
+        img2_label = ttk.Label(img_container, text="Esquema de Conexión", 
+                             font=('Helvetica', 10, 'bold'))
+        img2_label.pack(pady=(0, 10))
+        
+        img2_frame = ttk.Frame(img_container, relief='sunken', borderwidth=2)
+        img2_frame.pack()
+        ttk.Label(img2_frame, image=self.photo2).pack(padx=5, pady=5)
+
+    def create_results_tab(self, notebook):
+        """Crea la pestaña de resultados"""
+        self.result_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(self.result_frame, text="Resultados")
+        
+        # Frame principal para resultados
+        result_container = ttk.Frame(self.result_frame)
+        result_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Título
+        ttk.Label(result_container, text="Resultados del Cálculo", 
+                 style='Title.TLabel').pack(anchor='w', pady=(0, 10))
+        
+        # Área de texto con scrollbar
+        text_frame = ttk.Frame(result_container)
+        text_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.result_text = tk.Text(text_frame, wrap=tk.WORD, font=('Consolas', 10),
+                                 padx=10, pady=10, bg='white', fg='black')
+        scrollbar = ttk.Scrollbar(text_frame, command=self.result_text.yview)
+        
+        self.result_text.configure(yscrollcommand=scrollbar.set)
+        self.result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.result_text.insert(tk.END, "Presione 'Calcular' para obtener resultados...")
+        self.result_text.config(state=tk.DISABLED)
+        
+        # Botón de cálculo también en la pestaña de resultados
+        btn_frame = ttk.Frame(result_container)
+        btn_frame.pack(fill=tk.X, pady=(15, 5))
+        
+        ttk.Button(btn_frame, text="CALCULAR", command=self.calcular,
+                  style='Accent.TButton').pack(pady=5, ipadx=20, ipady=5)
+
+    def calcular(self):
+        """Realiza los cálculos y muestra los resultados"""
+        try:
+            # Obtener valores de entrada
+            dc = float(self.dc.get())
+            bcf = float(self.bcf.get())
+            twc = float(self.twc.get())
+            tcf = float(self.tcf.get())
+            
+            P = float(self.P.get())
+            Fx = float(self.Fx.get())
+            Fy = float(self.Fy.get())
+            Mx = float(self.Mx.get())
+            Mz = float(self.Mz.get())
+            
+            Fy_steel = float(self.Fy_mat.get())
+            fc = float(self.fc.get())
+            Fyp = float(self.Fyp.get())
+            Fup = float(self.Fup.get())
+            
+            Bp = float(self.Bp.get())
+            Hp = float(self.Hp.get())
+            cz = float(self.cz.get())
+            cy = float(self.cy.get())
+            
+            m = float(self.m.get())
+            n = float(self.n.get())
+            
+            # Realizar cálculos
+            Apb = Bp / 10 * Hp / 10  # Área de la placa base [cm²]
+            Sz = Bp / 10 * (Hp / 10) ** 2 / 6  # Momento de inercia en Z [cm³]
+            Sx = Hp / 10 * (Bp / 10) ** 2 / 6  # Momento de inercia en X [cm³]
+            
+            # Esfuerzos de aplastamiento [kgf/cm²]
+            Q1 = P * 1000 / Apb + Mz * 10**5 / Sz + Mx * 10**5 / Sx
+            Q2 = P * 1000 / Apb + Mz * 10**5 / Sz - Mx * 10**5 / Sx
+            Q3 = P * 1000 / Apb - Mz * 10**5 / Sz + Mx * 10**5 / Sx
+            Q4 = P * 1000 / Apb - Mz * 10**5 / Sz - Mx * 10**5 / Sx
+            
+            # Aplastamiento en apoyo de metal
+            A2 = cz * cy               # Área del dado [cm²]
+            A1 = Apb                   # Área de la placa base [cm²]
+            Pa = max(Q1, Q2, Q3, Q4) * Apb  # Carga máxima aplicada [kgf]
+            Pc = 0.85 * fc * A1 * (A2 / A1) ** 0.5  # Capacidad de carga [kgf]
+            Padm = Pc / 2.31           # Carga axial permisible [kgf]
+            R1 = Pa / Padm             # Relación de seguridad
+            
+            # Cálculo del espesor de la placa base
+            X1i = Q1 * (Hp / 10) / (Q1 + abs(Q4))  # Brazo asociado a Q1 y Q4 [cm]
+            X2i = abs(Q3) * (Hp / 10) / (abs(Q3) + Q2)  # Brazo asociado a Q3 y Q2 [cm]
+            X1 = max(X1i, X2i)  # Brazo crítico [cm]
+            
+            # Esfuerzo trapezoidal
+            Qm1 = Q1 * (X1 - m) / X1  # Esfuerzo en el borde [kgf/cm²]
+            
+            # Momento de diseño [kgf*cm]
+            Md = Qm1 * m**2 / 2 + (Q1 - Qm1) * m**2 / 3
+            
+            # Espesor de la placa base
+            tp = 2 * (Md * 1.67 / Fy_steel) ** 0.5  # [cm]
+            
+            # Espesor con cartelas
+            Mdc = Q1 * m**2 / 4
+            tpc = 2 * (Mdc * 1.67 / Fy_steel) ** 0.5  # [cm]
+            
+            # Mostrar resultados
+            self.result_text.config(state=tk.NORMAL)
+            self.result_text.delete(1.0, tk.END)
+            
+            self.result_text.insert(tk.END, "=== RESULTADOS DEL CÁLCULO ===\n\n")
+            self.result_text.insert(tk.END, "1. Aplastamiento en apoyo de concreto:\n")
+            self.result_text.insert(tk.END, f"   - Esfuerzo Q1: {Q1:.2f} kgf/cm²\n")
+            self.result_text.insert(tk.END, f"   - Esfuerzo Q2: {Q2:.2f} kgf/cm²\n")
+            self.result_text.insert(tk.END, f"   - Esfuerzo Q3: {Q3:.2f} kgf/cm²\n")
+            self.result_text.insert(tk.END, f"   - Esfuerzo Q4: {Q4:.2f} kgf/cm²\n")
+            self.result_text.insert(tk.END, f"   - Carga máxima aplicada (Pa): {Pa:.2f} kgf\n")
+            self.result_text.insert(tk.END, f"   - Capacidad de carga (Padm): {Padm:.2f} kgf\n")
+            self.result_text.insert(tk.END, f"   - Relación de seguridad R1 D/C: {R1:.2f}\n\n")
+            
+            self.result_text.insert(tk.END, "2. Cálculo del espesor de la placa base:\n")
+            self.result_text.insert(tk.END, f"   - Brazo crítico (X1): {X1:.2f} cm\n")
+            self.result_text.insert(tk.END, f"   - Momento de diseño (Md): {Md:.2f} kgf*cm\n")
+            self.result_text.insert(tk.END, f"   - Espesor requerido (tp): {tp:.2f} cm\n")
+            self.result_text.insert(tk.END, f"   - Espesor con cartelas (tpc): {tpc:.2f} cm\n")
+            
+            self.result_text.config(state=tk.DISABLED)
+            
+        except ValueError as e:
+            messagebox.showerror("Error", f"Por favor ingrese valores numéricos válidos.\nError: {str(e)}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Ocurrió un error durante el cálculo.\nError: {str(e)}")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = PlacaBaseApp(root)
+    root.mainloop()
